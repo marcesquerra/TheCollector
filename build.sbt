@@ -7,44 +7,38 @@ import ReleaseStateTransformations._
 import ReleaseKeys._
 import xerial.sbt.Sonatype.SonatypeKeys
 import com.typesafe.sbt.SbtGit.{GitKeys => git}
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-site.settings
+val scala10 = "2.10.7"
+val scala11 = "2.11.12"
+val scala12 = "2.12.8"
+val scala13 = "2.13.0"
 
-ghpages.settings
-
-site.includeScaladoc()
+val jsScalaVersions = Seq(scala11)
+val nativeScalaVersions = Seq(scala11)
+val jvmScalaVersions = Seq(scala10, scala11, scala12, scala13)
+// val jvmScalaVersions = Seq(scala11)
 
 val nameLiteral = "TheCollector"
+val sharedSettings: sbt.Def.SettingsDefinition =
+  site.settings          ++
+  ghpages.settings       ++
+  site.includeScaladoc() ++
+Seq(
 
-organization := s"com.bryghts.${nameLiteral.toLowerCase}"
+organization := s"com.bryghts.${nameLiteral.toLowerCase}",
 
-git.gitRemoteRepo := s"git@github.com:marcesquerra/$nameLiteral.git"
+git.gitRemoteRepo := s"git@github.com:marcesquerra/$nameLiteral.git",
 
-name := nameLiteral
+name := nameLiteral,
 
-scalaVersion := "2.11.6"
+scalaVersion := scala11,
 
-crossScalaVersions := Seq("2.10.4", "2.11.8", "2.12.8", "2.13.0")
+publishMavenStyle := true,
 
-publishMavenStyle := true
+sonatypeProfileName  := "com.bryghts",
 
-sonatypeProfileName  := "com.bryghts"
-
-libraryDependencies ++= Seq(
-)
-
-// libraryDependencies := {
-//     CrossVersion.partialVersion(scalaVersion.value) match {
-//         // if scala 2.11+ is used, quasiquotes are merged into scala-reflect
-//         case Some((2, scalaMajor)) if scalaMajor >= 11 =>
-//             libraryDependencies.value
-//         // in Scala 2.10, quasiquotes are provided by macro paradise
-//         case Some((2, 10)) =>
-//             libraryDependencies.value ++ Seq(
-//                 compilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full),
-//                 "org.scalamacros" %% "quasiquotes" % "2.0.0" cross CrossVersion.binary)
-//     }
-// }
+libraryDependencies ++= Seq( ),
 
 publishTo := {
     val nexus = "https://oss.sonatype.org/"
@@ -52,9 +46,9 @@ publishTo := {
         Some("snapshots" at nexus + "content/repositories/snapshots")
     else
         Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-}
+},
 
-publishArtifact in Test := false
+publishArtifact in Test := false,
 
 pomExtra := (
     <url>http://www.brights.com</url>
@@ -73,7 +67,7 @@ pomExtra := (
                 <email>esquerra@bryghts.com</email>
             </developer>
         </developers>
-    )
+    ),
 
 
 releaseProcess := Seq[ReleaseStep](
@@ -92,5 +86,23 @@ releaseProcess := Seq[ReleaseStep](
 )
 
 
+)
 
 
+val root =
+    // select supported platforms
+    crossProject(JSPlatform, JVMPlatform, NativePlatform)
+      .withoutSuffixFor(JVMPlatform)
+      .crossType(CrossType.Pure) // [Pure, Full, Dummy], default: CrossType.Full
+      .in(file("."))
+      .jsSettings(sharedSettings ++ Seq( crossScalaVersions := jsScalaVersions ))
+      .jvmSettings(sharedSettings ++ Seq( crossScalaVersions := jvmScalaVersions ))
+      .nativeSettings(sharedSettings ++ Seq( crossScalaVersions := nativeScalaVersions ))
+      .settings(Seq(
+        crossScalaVersions := Seq()
+      ))
+
+// Optional in sbt 1.x (mandatory in sbt 0.13.x)
+lazy val rootJS     = root.js
+lazy val rootJVM    = root.jvm
+lazy val rootNative = root.native
