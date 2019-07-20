@@ -4,9 +4,18 @@ package ops
 trait TraverseRightOps[+A, C[+X] <: TraverseRightOps[X, C]] {self: C[A] =>
   def rightHaltingForeach(f: A => Boolean): Unit
 
-  def rightForeach[R](f: A => R): Unit = rightHaltingForeach{a => f(a); true}
+  def rightHead: Option[A] = {
+    var r: Option[A] = None
+    rightHaltingForeach{a =>
+      r = Some(a)
+      false
+    }
+    r
+  }
 
-  def rightHaltingFold[R](z: R)(op: (A, R) => (R, Boolean)) = {
+  final def rightForeach[R](f: A => R): Unit = rightHaltingForeach{a => f(a); true}
+
+  final def rightHaltingFold[R](z: R)(op: (A, R) => (R, Boolean)) = {
     var result = z
     this rightHaltingForeach {x =>
       val (r, cont) = op(x, result)
@@ -16,7 +25,7 @@ trait TraverseRightOps[+A, C[+X] <: TraverseRightOps[X, C]] {self: C[A] =>
     result
   }
 
-  def rightFold[R](z: R)(op: (A, R) => R) =
+  final def rightFold[R](z: R)(op: (A, R) => R) =
     rightHaltingFold(z){(a, accum) => val r = op(a, accum); (r, true)}
 
   def isEmpty: Boolean = {
@@ -31,11 +40,20 @@ trait TraverseRightOps[+A, C[+X] <: TraverseRightOps[X, C]] {self: C[A] =>
 trait TraverseLeftOps[+A, C[+X] <: TraverseLeftOps[X, C]] {self: C[A] =>
   def leftHaltingForeach(f: A => Boolean): Unit
 
-  def leftForeach[R](f: A => R): Unit = leftHaltingForeach{a => f(a); true}
+  final def leftForeach[R](f: A => R): Unit = leftHaltingForeach{a => f(a); true}
 
   def foreach[R](f: A => R): Unit = leftForeach(f)
 
-  def leftHaltingFold[R](z: R)(op: (R, A) => (R, Boolean)) = {
+  def leftHead: Option[A] = {
+    var r: Option[A] = None
+    leftHaltingForeach{a =>
+      r = Some(a)
+      false
+    }
+    r
+  }
+
+  final def leftHaltingFold[R](z: R)(op: (R, A) => (R, Boolean)) = {
     var result = z
     this leftHaltingForeach {x =>
       val (r, cont) = op(result, x)
@@ -45,7 +63,7 @@ trait TraverseLeftOps[+A, C[+X] <: TraverseLeftOps[X, C]] {self: C[A] =>
     result
   }
 
-  def leftFold[R](z: R)(op: (A, R) => R) =
+  final def leftFold[R](z: R)(op: (A, R) => R) =
     leftHaltingFold(z){(a, accum) => val r = op(accum, a); (r, true)}
 
   def isEmpty: Boolean = {
