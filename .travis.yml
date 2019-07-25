@@ -1,15 +1,21 @@
+sudo: required
+
+scala:
+  - "2.11.8"
+
+os: linux
+dist: trusty
+jdk: oraclejdk8
 language: scala
-jdk:
-- oraclejdk8
 
 branches:
-  only:
+    only:
     - master
 
 before_install:
   - git fetch --tags
 
 script:
+  - ci/travis_setup.sh
   - ci/build.sh
 
-sudo: false

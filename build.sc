@@ -1,12 +1,65 @@
-import mill._, scalalib._, publish._
+import mill._, scalalib._, publish._, mill.scalajslib._, mill.scalanativelib._,
+mill.scalanativelib.api.ReleaseMode
 
 import TheCollectorModule._
 
-object main extends Cross[TheCollectorModule](jvmScalaVersions: _*)
+object main extends Module {
 
-class TheCollectorModule(val crossScalaVersion: String)
-    extends CrossScalaModule
-    with PublishModule {
+  object jvmMain extends Cross[TheCollectorJvmModule](jvmScalaVersions: _*)
+  object jsMain extends Cross[TheCollectorJsModule](jsScalaVersions: _*)
+  object nativeMain
+      extends Cross[TheCollectorNativeModule](nativeScalaVersions: _*)
+
+}
+
+class TheCollectorJvmModule(
+    val crossScalaVersion: String
+) extends TheCollectorModule { self =>
+
+  def platformSegment = "jvm"
+
+  // trait Tests extends super.Tests with CommonTestModule {
+  //   def platformSegment = self.platformSegment
+  // }
+}
+
+class TheCollectorJsModule(
+    val crossScalaVersion: String
+) extends TheCollectorModule
+    with ScalaJSModule { self =>
+
+  def platformSegment = "js"
+  def scalaJSVersion = "0.6.28"
+
+  // trait Tests extends super.Tests with CommonTestModule {
+  //   def platformSegment = self.platformSegment
+  // }
+}
+
+class TheCollectorNativeModule(
+    val crossScalaVersion: String
+) extends TheCollectorModule
+    with ScalaNativeModule { self =>
+
+  def platformSegment = "js"
+  def scalaNativeVersion = "0.3.9"
+  def releaseMode = ReleaseMode.Release
+
+  // trait Tests extends super.Tests with CommonTestModule {
+  //   def platformSegment = self.platformSegment
+  // }
+}
+
+trait TheCollectorModule extends CrossScalaModule with PublishModule {
+
+  def platformSegment: String
+  def millSourcePath = super.millSourcePath / os.up
+
+  def sources = T.sources(
+    millSourcePath / "src",
+    millSourcePath / s"src-$platformSegment"
+  )
+
   def artifactName = s"com.bryghts.${nameLiteral.toLowerCase}"
   def publishVersion = s"0.0.${buildNumber}"
 
@@ -36,10 +89,9 @@ object TheCollectorModule {
   val scala12 = "2.12.8"
   val scala13 = "2.13.0"
 
-  val jsScalaVersions = Seq(scala11)
+  val jsScalaVersions = Seq(scala10, scala11, scala12, scala13)
   val nativeScalaVersions = Seq(scala11)
   val jvmScalaVersions = Seq(scala10, scala11, scala12, scala13)
-  // val jvmScalaVersions = Seq(scala11)
 
   val nameLiteral = "TheCollector"
   //TRAVIS_BUILD_NUMBER
