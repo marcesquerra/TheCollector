@@ -60,7 +60,7 @@ trait TheCollectorModule extends CrossScalaModule with PublishModule {
     millSourcePath / s"src-$platformSegment"
   )
 
-  def artifactName = s"com.bryghts.${nameLiteral.toLowerCase}"
+  def artifactName = s"${nameLiteral.toLowerCase}"
   def publishVersion = s"0.0.${buildNumber}"
 
   def pomSettings = PomSettings(
